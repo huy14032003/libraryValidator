@@ -31,18 +31,18 @@ function validator(option) {
 
   var rules = {
     isRequired: function (value) {
-      return value.trim() ? "" : "Trường này không được để trống.";
+      return value.trim() ? "" : "*Trường này không được để trống.";
     },
     isEmail: function (value) {
       const regex = /\S+@\S+\.\S+/;
-      return regex.test(value) ? "" : "Email không hợp lệ.";
+      return regex.test(value) ? "" : "*Email không hợp lệ.";
     },
     minLength: function (value, min) {
-      return value.length >= min ? "" : `Phải có ít nhất ${min} ký tự.`;
+      return value.length >= min ? "" : `*Phải có ít nhất ${min} ký tự.`;
     },
     isMatch: function (value, compareValue) {
       var compareInput = document.getElementById(compareValue); // Lấy đối tượng DOM từ ID
-      return value === compareInput.value ? "" : "Giá trị không khớp."; // So sánh giá trị
+      return value === compareInput.value ? "" : "*Giá trị không khớp."; // So sánh giá trị
     },
   };
 
