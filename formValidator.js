@@ -1,122 +1,90 @@
-// formValidator.js
+function validator(option) {
+  function getParent(element, compareValue) {
+    while (element.parentElement) {
+      if (element.parentElement.matches(compareValue))
+        return element.parentElement;
+      element = element.parentElement;
+    }
+  }
 
-(function (global) {
-  const formValidator = {
-    // Hàm hiển thị lỗi
-    showError: function (input, message) {
-      const formGroup = input.parentElement;
-      const errorMessage = formGroup.querySelector(".error-message");
-      errorMessage.textContent = message;
-      formGroup.classList.add("invalid");
-    },
-
-    // Hàm xóa lỗi
-    clearError: function (input) {
-      const formGroup = input.parentElement;
-      const errorMessage = formGroup.querySelector(".error-message");
-      errorMessage.textContent = "";
-      formGroup.classList.remove("invalid");
-    },
-
-    // Các quy tắc kiểm tra
-    rules: {
-      isRequired: function (value) {
-        return value.trim() ? "" : "Trường này không được để trống.";
-      },
-      isEmail: function (value) {
-        const regex = /\S+@\S+\.\S+/;
-        return regex.test(value) ? "" : "Email không hợp lệ.";
-      },
-      minLength: function (value, min) {
-        return value.length >= min ? "" : `Phải có ít nhất ${min} ký tự.`;
-      },
-      isMatch: function (value, compareValue) {
-        return value === compareValue ? "" : "Giá trị không khớp.";
-      },
-    },
-
-    // Hàm kiểm tra
-    validateInput: function (input) {
-      const id = input.id;
-      let error = "";
-
-      if (id === "name") {
-        error = this.rules.isRequired(input.value);
+  function errorMessage(inputElement, message) {
+    var formGroup = getParent(inputElement, option.formGroupSelect);
+    if (formGroup) {
+      var errorElement = formGroup.querySelector(option.message);
+      if (errorElement) {
+        errorElement.innerHTML = message; // Hiển thị thông báo lỗi
+        inputElement.classList.add("invalid"); // Thêm lớp lỗi vào input
       }
-      if (id === "email") {
-        error =
-          this.rules.isRequired(input.value) || this.rules.isEmail(input.value);
-      }
-      if (id === "pass") {
-        error =
-          this.rules.isRequired(input.value) ||
-          this.rules.minLength(input.value, 6);
-      }
-      if (id === "cf-pass") {
-        const passValue = document.querySelector("#pass").value;
-        error =
-          this.rules.isRequired(input.value) ||
-          this.rules.isMatch(input.value, passValue);
-      }
+    }
+  }
 
-      if (error) {
-        this.showError(input, error);
-        return false;
-      } else {
-        this.clearError(input);
-        return true;
+  function clearError(inputElement) {
+    var formGroup = getParent(inputElement, option.formGroupSelect);
+    if (formGroup) {
+      var errorElement = formGroup.querySelector(option.message);
+      if (errorElement) {
+        errorElement.innerHTML = ""; // Xóa thông báo lỗi
+        inputElement.classList.remove("invalid"); // Loại bỏ lớp lỗi khỏi input
       }
+    }
+  }
+
+  var rules = {
+    isRequired: function (value) {
+      return value.trim() ? "" : "Trường này không được để trống.";
     },
-
-    // Xử lý khi submit form
-    handleSubmit: function (formId) {
-      const form = document.querySelector(formId);
-      if (!form) return;
-
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const inputs = form.querySelectorAll("input");
-        let isValid = true;
-
-        inputs.forEach((input) => {
-          if (!formValidator.validateInput(input)) {
-            isValid = false;
-          }
-        });
-
-        if (isValid) {
-          const data = {};
-          inputs.forEach((input) => {
-            data[input.id] = input.value;
-          });
-          console.log("Dữ liệu gửi đi:", data);
-          alert("Đăng ký thành công!");
-        }
-      });
+    isEmail: function (value) {
+      const regex = /\S+@\S+\.\S+/;
+      return regex.test(value) ? "" : "Email không hợp lệ.";
     },
-
-    // Xử lý khi người dùng nhập
-    handleInput: function (formId) {
-      const form = document.querySelector(formId);
-      if (!form) return;
-
-      form.querySelectorAll("input").forEach((input) => {
-        input.addEventListener("input", () => {
-          formValidator.validateInput(input);
-        });
-        input.onblur = function () {
-          formValidator.validateInput(input);
-        };
-      });
+    minLength: function (value, min) {
+      return value.length >= min ? "" : `Phải có ít nhất ${min} ký tự.`;
     },
-
-    // Hàm khởi tạo (kết nối tất cả các hàm)
-    init: function (options) {
-      formValidator.handleSubmit(options.formId);
-      formValidator.handleInput(options.formId);
+    isMatch: function (value, compareValue) {
+      var compareInput = document.getElementById(compareValue); // Lấy đối tượng DOM từ ID
+      return value === compareInput.value ? "" : "Giá trị không khớp."; // So sánh giá trị
     },
   };
 
-  // Xuất thư viện ra global
-  global.formValidator = formValidator;
-})(window);
+  function validate(input) {
+    var idrule = input.dataset.rule ? input.dataset.rule.split(",") : [];
+    var error = "";
+    idrule.forEach(function (rule) {
+      var [ruleName, ...params] = rule.split(":");
+      if (error) return; // Nếu đã có lỗi, không cần kiểm tra thêm
+      if (rules[ruleName]) error = rules[ruleName](input.value, ...params);
+    });
+    if (error) {
+      errorMessage(input, error);
+      return false;
+    } else {
+      clearError(input);
+      return true;
+    }
+  }
+
+  var formElement = document.querySelector(option.form);
+  if (formElement) {
+    formElement.onsubmit = function (e) {
+      e.preventDefault(); // Ngừng hành động mặc định của form (submit)
+
+      // Kiểm tra tất cả các input trong form
+      formElement.querySelectorAll("input, select").forEach(function (input) {
+        validate(input); // Gọi validate cho từng input
+      });
+    };
+
+    // Lắng nghe sự kiện oninput cho tất cả các input và select
+    formElement.querySelectorAll("input, select").forEach(function (input) {
+      input.oninput = function () {
+        validate(input);
+        // Gọi validate khi người dùng nhập vào trường
+      };
+    });
+    formElement.querySelectorAll("input, select").forEach(function (input) {
+      input.onblur = function () {
+        validate(input); // Gọi validate khi người dùng nhập vào trường
+      };
+    });
+  }
+}
